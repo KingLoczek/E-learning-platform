@@ -15,7 +15,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(
-                        auth -> auth.requestMatchers("/api-docs/**", "/v3/api-docs/**").permitAll()
+                        auth -> auth.requestMatchers("/api-docs/**", "/v3/api-docs*").permitAll()
                 )
                 .formLogin(Customizer.withDefaults())
                 .httpBasic(Customizer.withDefaults());
