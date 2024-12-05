@@ -1,6 +1,7 @@
 package edu.sigmaportal.platform.controller;
 
 import edu.sigmaportal.platform.dto.UserDto;
+import edu.sigmaportal.platform.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -8,6 +9,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
@@ -18,7 +22,14 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RestController
 @RequestMapping("/api/user")
 @Tag(name = "user", description = "the user API")
+@Validated
 public class UsersController {
+
+    private final UserService service;
+
+    public UsersController(UserService service) {
+        this.service = service;
+    }
 
     @GetMapping(value = "/", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "List all users")
@@ -42,8 +53,8 @@ public class UsersController {
             @ApiResponse(responseCode = "200", description = "User created", content = @Content(schema = @Schema(implementation = UserDto.class))),
             @ApiResponse(responseCode = "400", description = "Something was wrong with the user object", content = @Content())
     })
-    public UserDto create(@RequestBody UserDto user) {
-        return null;
+    public UserDto create(@Valid @RequestBody UserDto user) {
+        return service.createUser(user);
     }
 
     @PatchMapping(value = "/{id}", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
