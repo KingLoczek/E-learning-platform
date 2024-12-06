@@ -25,8 +25,9 @@ public class SecurityConfig {
                         auth -> auth
                                 .requestMatchers("/api-docs/**", "/v3/api-docs*").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/user/").permitAll()
+                                .anyRequest().authenticated()
                 )
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/api-docs/**", "/v3/api-docs*"))
                 .formLogin(Customizer.withDefaults())
                 .httpBasic(Customizer.withDefaults());
 

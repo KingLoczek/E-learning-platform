@@ -1,6 +1,7 @@
 package edu.sigmaportal.platform.service.impl;
 
 import edu.sigmaportal.platform.exception.SetupNotFinishedException;
+import edu.sigmaportal.platform.model.UserModel;
 import edu.sigmaportal.platform.model.UserTypeModel;
 import edu.sigmaportal.platform.repository.UserTypeRepository;
 import edu.sigmaportal.platform.service.UserTypeService;
@@ -33,5 +34,11 @@ public class UserTypeServiceImpl implements UserTypeService {
     @Override
     public UserTypeModel getInstructorUserType() {
         return getUserType("instructor");
+    }
+
+    @Override
+    public UserTypeModel getUsersType(UserModel user) {
+        return repo.findById(user.userTypeId())
+                .orElseThrow(() -> new IllegalStateException("User has a nonexistent UserType ID"));
     }
 }
