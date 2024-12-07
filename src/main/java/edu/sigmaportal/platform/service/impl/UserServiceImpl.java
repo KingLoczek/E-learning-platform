@@ -63,7 +63,7 @@ public class UserServiceImpl implements UserService {
         String firstName = Objects.isNull(user.firstName) ? old.firstName() : user.firstName;
         String lastName = Objects.isNull(user.lastName) ? old.lastName() : user.lastName;
         String email = Objects.isNull(user.email) ? old.email() : user.email;
-        long userTypeId = userTypes.getUserType(user.userType).id();
+        long userTypeId = Objects.isNull(user.userType) ? old.userTypeId() : userTypes.getUserType(user.userType).id();
 
         UserModel merged = new UserModel(old.userId(), firstName, lastName, email, old.password(), userTypeId);
         UserModel saved = users.save(merged);
