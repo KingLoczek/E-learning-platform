@@ -16,10 +16,12 @@ public class UserTypeServiceImpl implements UserTypeService {
         this.repo = repo;
     }
 
-    private UserTypeModel getUserType(String name) {
+    @Override
+    public UserTypeModel getUserType(String name) {
         UserTypeModel model = repo.findByName(name);
         if (model == null) throw new SetupNotFinishedException("Missing required UserType");
-        return model;    }
+        return model;
+    }
 
     @Override
     public UserTypeModel getFreshlyRegisteredUserType() {

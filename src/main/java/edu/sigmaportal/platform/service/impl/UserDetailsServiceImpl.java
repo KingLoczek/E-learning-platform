@@ -6,9 +6,9 @@ import edu.sigmaportal.platform.model.UserTypeModel;
 import edu.sigmaportal.platform.repository.PermissionRepository;
 import edu.sigmaportal.platform.repository.UserRepository;
 import edu.sigmaportal.platform.security.UserTypeAuthority;
+import edu.sigmaportal.platform.security.UserWithId;
 import edu.sigmaportal.platform.service.UserTypeService;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -36,6 +36,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         List<PermissionModel> perms = permissions.findAllByUserTypeId(user.userTypeId());
         UserTypeModel type = userTypes.getUsersType(user);
         List<GrantedAuthority> authorities = Stream.concat(perms.stream(), Stream.of(new UserTypeAuthority(type))).toList();
-        return new User(user.email(), user.password(), true, true, true, true, authorities);
+        return new UserWithId(user.userId(), user.email(), user.password(), true, true, true, true, authorities);
     }
 }

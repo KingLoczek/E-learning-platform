@@ -1,6 +1,9 @@
 package edu.sigmaportal.platform.controller;
 
 import edu.sigmaportal.platform.dto.UserDto;
+import edu.sigmaportal.platform.exception.InsufficientPermissionsException;
+import edu.sigmaportal.platform.security.RoleAuthority;
+import edu.sigmaportal.platform.security.UserWithId;
 import edu.sigmaportal.platform.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -10,19 +13,17 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.validation.annotation.Validated;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
-import java.util.Collections;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @RequestMapping("/api/user")
 @Tag(name = "user", description = "the user API")
-@Validated
 public class UsersController {
 
     private final UserService service;
@@ -34,7 +35,7 @@ public class UsersController {
     @GetMapping(value = "/", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "List all users")
     public Collection<UserDto> allUsers() {
-        return Collections.emptyList();
+        return service.users();
     }
 
     @GetMapping(value = "/{id}", produces = APPLICATION_JSON_VALUE)
@@ -44,7 +45,7 @@ public class UsersController {
             @ApiResponse(responseCode = "404", description = "User not found", content = @Content)
     })
     public UserDto findById(@Parameter(description = "ID of use to find") @PathVariable("id") String id) {
-        return null;
+        return service.fetchUser(id);
     }
 
     @PostMapping(value = "/", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
@@ -65,8 +66,22 @@ public class UsersController {
             @ApiResponse(responseCode = "400", description = "Something was wrong with the user object", content = @Content()),
             @ApiResponse(responseCode = "404", description = "User not found", content = @Content()),
     })
-    public UserDto update(@Parameter(description = "ID of user to edit") @PathVariable("id") String id, @RequestBody UserDto user) {
-        return null;
+    public UserDto update(@Parameter(description = "ID of user to edit") @PathVariable("id") String id, @RequestBody UserDto body, Authentication auth) {
+        boolean canManage = auth.getAuthorities().contains(new RoleAuthority("manage_users"));
+
+        if (auth.getPrincipal() instanceof UserWithId user) {
+            if (!canManage && !id.equals(user.getId())) {
+                throw new InsufficientPermissionsException("Cannot modify other users unless 'manage_users' permission is present");
+            }
+
+            if (!canManage && body.userType != null) {
+                throw new InsufficientPermissionsException("Changing 'user_type' requires manage_users permission");
+            }
+
+            return service.updateUser(id, body);
+        }
+
+        throw new InsufficientPermissionsException("Insufficient permissions to perform this operation");
     }
 
     @DeleteMapping("/{id}")
@@ -75,6 +90,18 @@ public class UsersController {
             @ApiResponse(responseCode = "204", description = "User deleted"),
             @ApiResponse(responseCode = "404", description = "User not found")
     })
-    public void delete(@Parameter(description = "ID of user to delete") @PathVariable("id") String id) {
+    public ResponseEntity<Void> delete(@Parameter(description = "ID of user to delete") @PathVariable("id") String id, Authentication auth) {
+        boolean canManage = auth.getAuthorities().contains(new RoleAuthority("manage_users"));
+
+        if (auth.getPrincipal() instanceof UserWithId user) {
+            if (!canManage && !id.equals(user.getId())) {
+                throw new InsufficientPermissionsException("Cannot delete other users unless 'manage_users' permission is present");
+            }
+
+            service.removeUser(id);
+            return ResponseEntity.noContent().build();
+        }
+
+        throw new InsufficientPermissionsException("Insufficient permissions to perform this operation");
     }
 }

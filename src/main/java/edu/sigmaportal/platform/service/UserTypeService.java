@@ -10,4 +10,6 @@ public interface UserTypeService {
     UserTypeModel getInstructorUserType();
 
     UserTypeModel getUsersType(UserModel user);
+
+    UserTypeModel getUserType(String user);
 }
