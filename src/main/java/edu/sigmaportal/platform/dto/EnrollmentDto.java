@@ -26,4 +26,12 @@ public class EnrollmentDto {
     @Schema(enumAsRef = true, name = "status_type", example = "ONGOING")
     @JsonProperty("status_type")
     public StatusType status;
+
+    public EnrollmentDto(String id, String studentId, String courseId, Instant joinedAt, StatusType status) {
+        this.id = id;
+        this.studentId = studentId;
+        this.courseId = courseId;
+        this.joinedAt = joinedAt;
+        this.status = status;
+    }
 }

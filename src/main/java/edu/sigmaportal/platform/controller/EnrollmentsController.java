@@ -1,12 +1,17 @@
 package edu.sigmaportal.platform.controller;
 
 import edu.sigmaportal.platform.dto.EnrollmentDto;
+import edu.sigmaportal.platform.exception.InsufficientPermissionsException;
+import edu.sigmaportal.platform.service.EnrollmentsService;
+import edu.sigmaportal.platform.util.AuthUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -16,6 +21,12 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @Tag(name = "enrollments", description = "the enrollments API")
 public class EnrollmentsController {
 
+    private final EnrollmentsService service;
+
+    public EnrollmentsController(EnrollmentsService service) {
+        this.service = service;
+    }
+
     @GetMapping(value = "/{id}", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Find enrollment by ID")
     @ApiResponses(value = {
@@ -23,7 +34,7 @@ public class EnrollmentsController {
             @ApiResponse(responseCode = "404", description = "Enrollment not found", content = @Content)
     })
     public EnrollmentDto findById(@PathVariable("id") String id) {
-        return null;
+        return service.find(id);
     }
 
     @PatchMapping(value = "/{id}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
@@ -32,8 +43,12 @@ public class EnrollmentsController {
             @ApiResponse(responseCode = "200", description = "Enrollment updated", content = @Content(schema = @Schema(implementation = EnrollmentDto.class))),
             @ApiResponse(responseCode = "400", description = "Invalid enrollment object", content = @Content)
     })
-    public EnrollmentDto update(@PathVariable("id") String id, @RequestBody EnrollmentDto enrollment) {
-        return null;
+    public EnrollmentDto update(@PathVariable("id") String id, @RequestBody EnrollmentDto enrollment, Authentication auth) {
+        if (service.owns(id, AuthUtils.getUserId(auth))) {
+            return service.update(id, enrollment);
+        }
+
+        throw new InsufficientPermissionsException("Cannot update this enrollment");
     }
 
     @DeleteMapping("/{id}")
@@ -42,6 +57,12 @@ public class EnrollmentsController {
             @ApiResponse(responseCode = "204", description = "Enrollment deleted"),
             @ApiResponse(responseCode = "404", description = "Enrollment not found")
     })
-    public void delete(@PathVariable("id") String id) {
+    public ResponseEntity<Void> delete(@PathVariable("id") String id, Authentication auth) {
+        if (service.owns(id, AuthUtils.getUserId(auth))) {
+            service.remove(id);
+            return ResponseEntity.noContent().build();
+        }
+
+        throw new InsufficientPermissionsException("Cannot delete this enrollment");
     }
 }
