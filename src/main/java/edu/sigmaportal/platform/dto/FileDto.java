@@ -15,4 +15,11 @@ public class FileDto {
 
     @Schema(example = "aGVsbG8gd29ybGQ=", nullable = true)
     public String content;
+
+    public FileDto(String id, String filename, String type, String content) {
+        this.id = id;
+        this.filename = filename;
+        this.type = type;
+        this.content = content;
+    }
 }
