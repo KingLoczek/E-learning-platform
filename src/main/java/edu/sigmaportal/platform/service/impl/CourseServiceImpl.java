@@ -110,6 +110,12 @@ public class CourseServiceImpl implements CourseService {
         return new CourseDto(idToStr(model.courseId()), model.name(), model.description(), idToStr(model.instructorId()), null, model.status());
     }
 
+    @Override
+    public boolean exists(String courseId) {
+        int cid = strToCourseId(courseId);
+        return courses.existsById(cid);
+    }
+
     private String cleanAccessKey(String accessKey) {
         if (accessKey == null || accessKey.isBlank()) {
             return null;

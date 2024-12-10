@@ -5,6 +5,7 @@ import edu.sigmaportal.platform.dto.EnrollDto;
 import edu.sigmaportal.platform.exception.InsufficientPermissionsException;
 import edu.sigmaportal.platform.service.CourseService;
 import edu.sigmaportal.platform.service.EnrollmentsService;
+import edu.sigmaportal.platform.service.TopicService;
 import edu.sigmaportal.platform.util.AuthUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -32,10 +33,12 @@ public class CourseController {
 
     private final CourseService service;
     private final EnrollmentsService enrolls;
+    private final TopicService topics;
 
-    public CourseController(CourseService service, EnrollmentsService enrolls) {
+    public CourseController(CourseService service, EnrollmentsService enrolls, TopicService topics) {
         this.service = service;
         this.enrolls = enrolls;
+        this.topics = topics;
     }
 
     @GetMapping(value = "/", produces = APPLICATION_JSON_VALUE)
@@ -57,7 +60,7 @@ public class CourseController {
             @ApiResponse(responseCode = "404", description = "Course not found", content = @Content)
     })
     public Collection<String> findTopics(@Parameter(description = "ID of the associated course") @PathVariable("id") String id) {
-        return null;
+        return topics.findOwnedBy(id);
     }
 
     @GetMapping(value = "/{id}/events", produces = APPLICATION_JSON_VALUE)

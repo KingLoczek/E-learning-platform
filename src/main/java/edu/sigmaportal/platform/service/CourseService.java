@@ -2,6 +2,7 @@ package edu.sigmaportal.platform.service;
 
 import edu.sigmaportal.platform.dto.CourseDto;
 import edu.sigmaportal.platform.dto.EnrollmentDto;
+import jakarta.validation.constraints.NotEmpty;
 
 import java.util.Collection;
 
@@ -13,4 +14,5 @@ public interface CourseService {
     Collection<CourseDto> courses();
     void delete(String courseId);
     CourseDto find(String courseId);
+    boolean exists(String courseId);
 }
