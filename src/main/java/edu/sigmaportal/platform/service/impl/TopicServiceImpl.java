@@ -73,6 +73,12 @@ public class TopicServiceImpl implements TopicService {
         return repo.findAllByCourseId(cid).map(t -> Integer.toString(t.topicId())).toList();
     }
 
+    @Override
+    public boolean exists(String topicId) {
+        int tid = strToTopicId(topicId);
+        return repo.existsById(tid);
+    }
+
     private int strToCourseId(String id) {
         try {
             return Integer.parseInt(id);

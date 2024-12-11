@@ -92,6 +92,12 @@ public class FileServiceImpl implements FileService {
         files.delete(model);
     }
 
+    @Override
+    public boolean allExist(List<String> fileIds) {
+        List<Integer> ids = fileIds.stream().map(this::strToId).toList();
+        return files.countAllByFileIdIsIn(ids) == ids.size();
+    }
+
     private String updateFilename(FileModel existing, String filename) {
         if (filename == null)
             return existing.filePath();

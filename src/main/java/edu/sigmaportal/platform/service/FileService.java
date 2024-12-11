@@ -4,6 +4,7 @@ import edu.sigmaportal.platform.dto.FileDto;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.util.List;
 
 public interface FileService {
     FileDto upload(MultipartFile file);
@@ -12,6 +13,7 @@ public interface FileService {
     FileDto find(String id);
     FileDto update(String id, FileDto file);
     void delete(String id);
+    boolean allExist(List<String> fileIds);
 
     interface FileStream {
         InputStream handle();
