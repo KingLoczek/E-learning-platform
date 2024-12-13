@@ -5,6 +5,7 @@ import edu.sigmaportal.platform.dto.EnrollDto;
 import edu.sigmaportal.platform.exception.InsufficientPermissionsException;
 import edu.sigmaportal.platform.service.CourseService;
 import edu.sigmaportal.platform.service.EnrollmentsService;
+import edu.sigmaportal.platform.service.EventService;
 import edu.sigmaportal.platform.service.TopicService;
 import edu.sigmaportal.platform.util.AuthUtils;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,11 +35,13 @@ public class CourseController {
     private final CourseService service;
     private final EnrollmentsService enrolls;
     private final TopicService topics;
+    private final EventService events;
 
-    public CourseController(CourseService service, EnrollmentsService enrolls, TopicService topics) {
+    public CourseController(CourseService service, EnrollmentsService enrolls, TopicService topics, EventService events) {
         this.service = service;
         this.enrolls = enrolls;
         this.topics = topics;
+        this.events = events;
     }
 
     @GetMapping(value = "/", produces = APPLICATION_JSON_VALUE)
@@ -69,7 +72,12 @@ public class CourseController {
             @ApiResponse(responseCode = "200", description = "Events found", content = @Content(array = @ArraySchema(schema = @Schema(type = "string")))),
             @ApiResponse(responseCode = "404", description = "Course not found", content = @Content)
     })
-    public Collection<String> findEvents(@Parameter(description = "ID of the associated course") @PathVariable("id") String id) {
+    public Collection<String> findEvents(@Parameter(description = "ID of the associated course") @PathVariable("id") String id, Authentication auth) {
+        String userId = AuthUtils.getUserId(auth);
+        if (enrolls.isEnrolled(id, userId) || service.owns(userId, id)) {
+            return events.findOwnedBy(id);
+        }
+
         return null;
     }
 

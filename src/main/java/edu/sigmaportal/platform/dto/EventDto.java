@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 
 @Schema(name = "Event")
 public class EventDto {
@@ -19,9 +20,17 @@ public class EventDto {
 
     @Schema(example = "1982-02-24T21:37:00.000Z")
     @JsonProperty("start_timestamp")
-    public Instant startDate;
+    public OffsetDateTime startDate;
 
     @Schema(example = "2010-01-27T21:37:00.000Z")
     @JsonProperty("end_timestamp")
-    public Instant endDate;
+    public OffsetDateTime endDate;
+
+    public EventDto(String id, String courseId, String title, OffsetDateTime startDate, OffsetDateTime endDate) {
+        this.id = id;
+        this.courseId = courseId;
+        this.title = title;
+        this.startDate = startDate;
+        this.endDate = endDate;
+    }
 }
