@@ -132,6 +132,16 @@ public class SubmissionServiceImpl implements SubmissionService {
         return new SubmissionDto(idToStr(model.assignmentId()), idToStr(model.studentId()), idToStr(model.assignmentId()), fileIds, model.submittedAt(), model.isSubmitted());
     }
 
+    @Override
+    public boolean exists(String submissionId) {
+        return repo.existsById(strToSubmissionId(submissionId));
+    }
+
+    @Override
+    public boolean isSubmitted(int sid) {
+        return repo.findById(sid).orElseThrow(() -> new EntityNotFoundException("Submission not found")).isSubmitted();
+    }
+
     private int strToSubmissionId(String submissionId) {
         try {
             return Integer.parseInt(submissionId);

@@ -10,4 +10,6 @@ public interface SubmissionService {
     String owningCourseId(String id);
     void delete(String id);
     SubmissionDto find(String id);
+    boolean exists(String submissionId);
+    boolean isSubmitted(int sid);
 }

@@ -11,7 +11,8 @@ VALUES ('manage_users'), ('enroll'), ('create_course'),
        ('create_topic'), ('edit_topic'), ('delete_topic'),
        ('create_material'), ('edit_material'), ('delete_material'),
        ('create_assignment'), ('edit_assignment'), ('delete_assignment'),
-       ('create_submission'), ('edit_submission'), ('delete_submission'), ('manage_course_submissions');
+       ('create_submission'), ('edit_submission'), ('delete_submission'), ('manage_course_submissions'),
+       ('create_grade'), ('update_grade'), ('delete_grade');
 
 WITH admin_id AS (
     SELECT user_type_id AS id FROM "UserType" AS ut WHERE ut.type_name = 'admin'
@@ -39,6 +40,9 @@ VALUES
     ((SELECT id FROM instructor_id), (SELECT id FROM perms WHERE n = 'edit_assignment')),
     ((SELECT id FROM instructor_id), (SELECT id FROM perms WHERE n = 'delete_assignment')),
     ((SELECT id FROM instructor_id), (SELECT id FROM perms WHERE n = 'manage_course_submissions')),
+    ((SELECT id FROM instructor_id), (SELECT id FROM perms WHERE n = 'create_grade')),
+    ((SELECT id FROM instructor_id), (SELECT id FROM perms WHERE n = 'edit_grade')),
+    ((SELECT id FROM instructor_id), (SELECT id FROM perms WHERE n = 'delete_grade')),
     ((SELECT id FROM student_id), (SELECT id FROM perms WHERE n = 'enroll')),
     ((SELECT id FROM student_id), (SELECT id FROM perms WHERE n = 'create_submission')),
     ((SELECT id FROM student_id), (SELECT id FROM perms WHERE n = 'edit_submission')),
