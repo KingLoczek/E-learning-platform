@@ -120,6 +120,19 @@ public class AssignmentServiceImpl implements AssignmentService {
         return new AssignmentDto(idToStr(model.assignmentId()), model.name(), model.content(), fileIds, model.dueDate(), model.closeDate(), idToStr(model.assignedBy()), idToStr(model.topicId()));
     }
 
+    @Override
+    public boolean exists(String assignmentId) {
+        return repo.existsById(strToAssignmentId(assignmentId));
+    }
+
+    @Override
+    public boolean isClosed(int assignmentId) {
+        OffsetDateTime now = OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+        OffsetDateTime closeDate = repo.findById(assignmentId)
+                .orElseThrow(() -> new EntityNotFoundException("Assingment not found")).closeDate();
+        return now.isAfter(closeDate);
+    }
+
     private OffsetDateTime checkDate(OffsetDateTime dateTime, String error) {
         OffsetDateTime trunc = dateTime.truncatedTo(ChronoUnit.SECONDS);
         OffsetDateTime now = OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS);

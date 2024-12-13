@@ -8,4 +8,5 @@ public interface EnrollmentsService {
     boolean owns(String enrollmentId, String userId);
     EnrollmentDto find(String id);
     EnrollmentDto update(String id, EnrollmentDto enrollment);
+    boolean isEnrolled(String courseId, String userId);
 }

@@ -60,6 +60,13 @@ public class EnrollmentsServiceImpl implements EnrollmentsService {
         return new EnrollmentDto(idToStr(saved.enrollmentId()), idToStr(saved.studentId()), idToStr(saved.courseId()), saved.joinedAt().toInstant(), saved.status());
     }
 
+    @Override
+    public boolean isEnrolled(String courseId, String userId) {
+        int cid = strToCourseId(courseId);
+        int uid = strToStudentId(userId);
+        return repo.existsByCourseIdAndStudentId(cid, uid);
+    }
+
     private int strToCourseId(String str) {
         try {
             return Integer.parseInt(str);
