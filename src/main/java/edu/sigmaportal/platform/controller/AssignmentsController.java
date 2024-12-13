@@ -1,6 +1,11 @@
 package edu.sigmaportal.platform.controller;
 
 import edu.sigmaportal.platform.dto.AssignmentDto;
+import edu.sigmaportal.platform.exception.InsufficientPermissionsException;
+import edu.sigmaportal.platform.service.AssignmentService;
+import edu.sigmaportal.platform.service.CourseService;
+import edu.sigmaportal.platform.service.TopicService;
+import edu.sigmaportal.platform.util.AuthUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -9,6 +14,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
@@ -20,6 +29,16 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @Tag(name = "assigment", description = "the assigment API")
 public class AssignmentsController {
 
+    private final AssignmentService assignments;
+    private final TopicService topics;
+    private final CourseService courses;
+
+    public AssignmentsController(AssignmentService assignments, TopicService topics, CourseService courses) {
+        this.assignments = assignments;
+        this.topics = topics;
+        this.courses = courses;
+    }
+
     @GetMapping(value = "/{id}", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Find assignment by ID")
     @ApiResponses(value = {
@@ -27,7 +46,7 @@ public class AssignmentsController {
             @ApiResponse(responseCode = "404", description = "Assignment not found", content = @Content)
     })
     public AssignmentDto findById(@Parameter(description = "ID of the assignment", required = true) @PathVariable String id) {
-        return null;
+        return assignments.find(id);
     }
 
     @GetMapping(value = "/{id}/files", produces = APPLICATION_JSON_VALUE)
@@ -46,8 +65,15 @@ public class AssignmentsController {
             @ApiResponse(responseCode = "200", description = "Assignment created", content = @Content(schema = @Schema(implementation = AssignmentDto.class))),
             @ApiResponse(responseCode = "400", description = "Invalid assignment object", content = @Content)
     })
-    public AssignmentDto create(@RequestBody AssignmentDto assigment) {
-        return null;
+    @Secured("create_assignment")
+    public AssignmentDto create(@Valid @RequestBody AssignmentDto assigment, Authentication auth) {
+        String userId = AuthUtils.getUserId(auth);
+        String courseId = topics.owningCourseId(assigment.topicId);
+        if (courses.owns(userId, courseId)) {
+            return assignments.create(userId, assigment);
+        }
+
+        throw new InsufficientPermissionsException("Not a course owner");
     }
 
     @PatchMapping(value = "/{id}", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
@@ -57,8 +83,15 @@ public class AssignmentsController {
             @ApiResponse(responseCode = "400", description = "Invalid assignment object", content = @Content),
             @ApiResponse(responseCode = "404", description = "Assignment not found", content = @Content)
     })
-    public AssignmentDto update(@Parameter(description = "ID of the assignment", required = true) @PathVariable String id, @RequestBody AssignmentDto assigment) {
-        return null;
+    @Secured("edit_assignment")
+    public AssignmentDto update(@Parameter(description = "ID of the assignment", required = true) @PathVariable String id, @RequestBody AssignmentDto assigment, Authentication auth) {
+        String userId = AuthUtils.getUserId(auth);
+        String courseId = assignments.owningCourseId(id);
+        if (courses.owns(userId, courseId)) {
+            return assignments.update(id, assigment);
+        }
+
+        throw new InsufficientPermissionsException("Not a course owner");
     }
 
     @DeleteMapping("/{id}")
@@ -67,7 +100,15 @@ public class AssignmentsController {
             @ApiResponse(responseCode = "204", description = "Assignment deleted", content = @Content),
             @ApiResponse(responseCode = "404", description = "Assignment not found", content = @Content)
     })
-    public AssignmentDto deleteAssignment(@Parameter(description = "ID of the assignment", required = true) @PathVariable String id) {
-        return null;
+    @Secured("delete_assignment")
+    public ResponseEntity<Void> delete(@Parameter(description = "ID of the assignment", required = true) @PathVariable String id, Authentication auth) {
+        String userId = AuthUtils.getUserId(auth);
+        String courseId = assignments.owningCourseId(id);
+        if (courses.owns(userId, courseId)) {
+            assignments.delete(id);
+            return ResponseEntity.noContent().build();
+        }
+
+        throw new InsufficientPermissionsException("Not a course owner");
     }
 }

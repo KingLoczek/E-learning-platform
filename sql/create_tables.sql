@@ -73,6 +73,7 @@ CREATE TABLE "Assignments" (
   "name" varchar(100),
   "content" text,
   "due_date" timestamp with time zone,
+  "close_date" timestamp with time zone,
   "assigned_by" integer,
   "topic_id" integer
 );
