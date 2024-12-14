@@ -94,7 +94,7 @@ public class MaterialsController {
             @ApiResponse(responseCode = "404", description = "Material not found", content = @Content),
     })
     @Secured("edit_material")
-    public MaterialDto updateMaterial(@Parameter(description = "ID of the material", required = true) @PathVariable String id, @Valid @RequestBody MaterialDto body, Authentication auth) {
+    public MaterialDto updateMaterial(@Parameter(description = "ID of the material", required = true) @PathVariable String id, @RequestBody MaterialDto body, Authentication auth) {
         String userId = AuthUtils.getUserId(auth);
         String courseId = materials.owningCourseId(id);
         if (courses.owns(userId, courseId)) {

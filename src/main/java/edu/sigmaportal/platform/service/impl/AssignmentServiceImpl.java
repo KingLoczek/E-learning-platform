@@ -61,7 +61,7 @@ public class AssignmentServiceImpl implements AssignmentService {
 
     @Override
     public AssignmentDto update(String assignmentId, AssignmentDto assigment) {
-        if (!files.allExist(assigment.fileIds))
+        if (assigment.fileIds != null && !files.allExist(assigment.fileIds))
             throw new DependentEntityNotFoundException("Some files do not exist");
 
         if (assigment.topicId != null && !topics.exists(assigment.topicId))
@@ -73,7 +73,7 @@ public class AssignmentServiceImpl implements AssignmentService {
             String newTopicCourseId = topics.owningCourseId(assigment.topicId);
             String oldTopicCourseId = topics.owningCourseId(idToStr(old.topicId()));
             if (!newTopicCourseId.equals(oldTopicCourseId))
-                throw new BadRequestException("Cannot assign to topic outside of the current course");
+                throw new BadRequestException("Cannot move to a topic outside of the current course");
         }
         String name = Objects.isNull(assigment.name) ? old.name() : assigment.name;
         String content = Objects.isNull(assigment.content) ? old.content() : assigment.content;
@@ -83,18 +83,20 @@ public class AssignmentServiceImpl implements AssignmentService {
         int topicId = Objects.isNull(assigment.topicId) ? old.topicId() : strToTopicId(assigment.topicId);
         AssignmentModel merged = new AssignmentModel(old.assignmentId(), name, content, dueDate, closeDate, old.assignedBy(), topicId);
         AssignmentModel saved = repo.save(merged);
-        Set<Integer> fileIds = assigment.fileIds.stream().map(this::strToAssignmentId).collect(Collectors.toSet());
-        Set<Integer> oldFileIds = assignFileRepo.findAllByAssignmentId(aid).map(AssignmentFileModel::fileId).collect(Collectors.toSet());
-        List<AssignmentFileModel> freshFiles = fileIds.stream()
-                .filter(id -> !oldFileIds.contains(id))
-                .map(id -> new AssignmentFileModel(0, aid, id)).toList();
-        List<Integer> unlinkedFiles = oldFileIds.stream()
-                .filter(id -> !fileIds.contains(id))
-                .toList();
-        if (!freshFiles.isEmpty())
-            assignFileRepo.saveAll(freshFiles);
-        if (!unlinkedFiles.isEmpty())
-            assignFileRepo.deleteUnlikedFiles(aid, unlinkedFiles);
+        if (assigment.fileIds != null) {
+            Set<Integer> fileIds = assigment.fileIds.stream().map(this::strToAssignmentId).collect(Collectors.toSet());
+            Set<Integer> oldFileIds = assignFileRepo.findAllByAssignmentId(aid).map(AssignmentFileModel::fileId).collect(Collectors.toSet());
+            List<AssignmentFileModel> freshFiles = fileIds.stream()
+                    .filter(id -> !oldFileIds.contains(id))
+                    .map(id -> new AssignmentFileModel(0, aid, id)).toList();
+            List<Integer> unlinkedFiles = oldFileIds.stream()
+                    .filter(id -> !fileIds.contains(id))
+                    .toList();
+            if (!freshFiles.isEmpty())
+                assignFileRepo.saveAll(freshFiles);
+            if (!unlinkedFiles.isEmpty())
+                assignFileRepo.deleteUnlikedFiles(aid, unlinkedFiles);
+        }
         List<String> savedFileIds = assignFileRepo.findAllByAssignmentId(aid).map(m -> idToStr(m.fileId())).toList();
         return new AssignmentDto(idToStr(saved.assignmentId()), saved.name(), saved.content(), savedFileIds, saved.dueDate(), saved.closeDate(), idToStr(saved.assignedBy()), idToStr(saved.topicId()));
     }

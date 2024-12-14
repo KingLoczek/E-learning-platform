@@ -1,6 +1,7 @@
 package edu.sigmaportal.platform.service.impl;
 
 import edu.sigmaportal.platform.dto.MaterialDto;
+import edu.sigmaportal.platform.exception.BadRequestException;
 import edu.sigmaportal.platform.exception.DependentEntityNotFoundException;
 import edu.sigmaportal.platform.exception.EntityNotFoundException;
 import edu.sigmaportal.platform.model.MaterialFileModel;
@@ -61,28 +62,39 @@ public class MaterialServiceImpl implements MaterialService {
 
     @Override
     public MaterialDto update(String materialId, MaterialDto material) {
-        if (!files.allExist(material.fileIds))
+        if (material.fileIds != null && !files.allExist(material.fileIds))
             throw new DependentEntityNotFoundException("Not all files exist");
 
         int mid = strToMaterialId(materialId);
         MaterialModel old = repo.findById(mid).orElseThrow(() -> new EntityNotFoundException("Material not found"));
         String name = Objects.isNull(material.name) ? old.name() : material.name;
         String content = Objects.isNull(material.content) ? old.content() : material.content;
-        int topicId = Objects.isNull(material.topicId) ? old.topicId() : strToTopicId(material.topicId);
+        int topicId;
+        if (material.topicId != null) {
+            String newTopicCourseId = topics.owningCourseId(material.topicId);
+            String oldTopicCourseId = topics.owningCourseId(idToStr(old.topicId()));
+            if (!newTopicCourseId.equals(oldTopicCourseId))
+                throw new BadRequestException("Cannot move to a topic outside of the current course");
+            topicId = strToTopicId(material.topicId);
+        } else {
+            topicId = old.topicId();
+        }
         MaterialModel merged = new MaterialModel(old.materialId(), name, content, old.authorId(), topicId);
         MaterialModel saved = repo.save(merged);
-        Set<Integer> fileIds = material.fileIds.stream().map(this::strToMaterialId).collect(Collectors.toSet());
-        Set<Integer> oldFileIds = matFileRepo.findAllByMaterialId(mid).map(MaterialFileModel::fileId).collect(Collectors.toSet());
-        List<MaterialFileModel> freshFiles = fileIds.stream()
-                .filter(id -> !oldFileIds.contains(id))
-                .map(id -> new MaterialFileModel(0, mid, id)).toList();
-        List<Integer> staleFiles = oldFileIds.stream()
-                .filter(id -> !fileIds.contains(id))
-                .toList();
-        if (!freshFiles.isEmpty())
-            matFileRepo.saveAll(freshFiles);
-        if (!staleFiles.isEmpty())
-            matFileRepo.deleteStaleFiles(mid, staleFiles);
+        if (material.fileIds != null) {
+            Set<Integer> fileIds = material.fileIds.stream().map(this::strToMaterialId).collect(Collectors.toSet());
+            Set<Integer> oldFileIds = matFileRepo.findAllByMaterialId(mid).map(MaterialFileModel::fileId).collect(Collectors.toSet());
+            List<MaterialFileModel> freshFiles = fileIds.stream()
+                    .filter(id -> !oldFileIds.contains(id))
+                    .map(id -> new MaterialFileModel(0, mid, id)).toList();
+            List<Integer> staleFiles = oldFileIds.stream()
+                    .filter(id -> !fileIds.contains(id))
+                    .toList();
+            if (!freshFiles.isEmpty())
+                matFileRepo.saveAll(freshFiles);
+            if (!staleFiles.isEmpty())
+                matFileRepo.deleteStaleFiles(mid, staleFiles);
+        }
         List<String> savedFileIds = matFileRepo.findAllByMaterialId(mid).map(m -> idToStr(m.fileId())).toList();
         return new MaterialDto(idToStr(saved.materialId()), saved.name(), saved.content(), savedFileIds, idToStr(saved.authorId()), idToStr(saved.topicId()));
     }
