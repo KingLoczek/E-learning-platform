@@ -40,8 +40,12 @@ public class SubmissionServiceImpl implements SubmissionService {
         int sid = strToStudentId(studentId);
         if (!assignments.exists(submission.assignmentId))
             throw new DependentEntityNotFoundException("Assignment does not exist");
-        if (!files.allExist(submission.fileIds))
-            throw new DependentEntityNotFoundException("Some files do not exist");
+        if (submission.fileIds != null) {
+            if (!files.allExist(submission.fileIds))
+                throw new DependentEntityNotFoundException("Some files do not exist");
+            if (!files.ownsAll(studentId, submission.fileIds))
+                throw new BadRequestException("Not a owner of all files");
+        }
         int aid = Integer.parseInt(submission.assignmentId);
         if (repo.existsByStudentIdAndAssignmentId(sid, aid))
             throw new BadRequestException("Submission already exists for this assignment");
@@ -69,13 +73,17 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     @Override
     public SubmissionDto update(String id, SubmissionDto submission) {
-        if (!files.allExist(submission.fileIds))
-            throw new DependentEntityNotFoundException("Some files do not exist");
-
         int sid = strToSubmissionId(id);
-        SubmissionModel model = repo.findById(sid).orElseThrow(() -> new EntityNotFoundException("Submission not found"));
-        if (model.isSubmitted())
+        SubmissionModel old = repo.findById(sid).orElseThrow(() -> new EntityNotFoundException("Submission not found"));
+        if (old.isSubmitted())
             throw new InvalidOperationException("Cannot edit submission that is submitted");
+
+        if (submission.fileIds != null) {
+            if (!files.allExist(submission.fileIds))
+                throw new DependentEntityNotFoundException("Some files do not exist");
+            if (!files.ownsAll(idToStr(old.studentId()), submission.fileIds))
+                throw new BadRequestException("Not a owner of all files");
+        }
 
         Set<Integer> fileIds = submission.fileIds.stream().map(this::strToFileId).collect(Collectors.toSet());
         Set<Integer> oldFiles = subFileRepo.findAllBySubmissionId(sid).map(SubmissionFileModel::fileId).collect(Collectors.toSet());
@@ -92,7 +100,7 @@ public class SubmissionServiceImpl implements SubmissionService {
             subFileRepo.saveAll(freshFiles);
         List<String> savedFileIds = subFileRepo.findAllBySubmissionId(sid)
                 .map(m -> idToStr(m.fileId())).toList();
-        return new SubmissionDto(idToStr(model.assignmentId()), idToStr(model.studentId()), idToStr(model.assignmentId()), savedFileIds, model.submittedAt(), model.isSubmitted());
+        return new SubmissionDto(idToStr(old.assignmentId()), idToStr(old.studentId()), idToStr(old.assignmentId()), savedFileIds, old.submittedAt(), old.isSubmitted());
     }
 
     @Override

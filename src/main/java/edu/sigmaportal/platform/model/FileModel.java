@@ -14,28 +14,30 @@ public final class FileModel {
     private final int fileId;
     private final String filePath;
     private final int fileTypeId;
+    private final int ownerId;
     @Transient
     private final byte[] bytes;
     @Transient
     private final InputStream stream;
 
     @PersistenceCreator
-    public FileModel(int fileId, String filePath, int fileTypeId) {
-        this(fileId, filePath, fileTypeId, null, InputStream.nullInputStream());
+    public FileModel(int fileId, String filePath, int fileTypeId, int ownerId) {
+        this(fileId, filePath, fileTypeId, ownerId, null, InputStream.nullInputStream());
     }
 
-    public FileModel(int fileId, String filePath, int fileTypeId, byte[] bytes) {
-        this(fileId, filePath, fileTypeId, bytes, Objects.isNull(bytes) ? InputStream.nullInputStream() : new ByteArrayInputStream(bytes));
+    public FileModel(int fileId, String filePath, int fileTypeId, int ownerId, byte[] bytes) {
+        this(fileId, filePath, fileTypeId, ownerId, bytes, Objects.isNull(bytes) ? InputStream.nullInputStream() : new ByteArrayInputStream(bytes));
     }
 
-    public FileModel(int fileId, String filePath, int fileTypeId, InputStream stream) {
-        this(fileId, filePath, fileTypeId, null, stream);
+    public FileModel(int fileId, String filePath, int fileTypeId, int ownerId, InputStream stream) {
+        this(fileId, filePath, fileTypeId, ownerId, null, stream);
     }
 
-    private FileModel(int fileId, String filePath, int fileTypeId, byte[] bytes, InputStream stream) {
+    private FileModel(int fileId, String filePath, int fileTypeId, int ownerId, byte[] bytes, InputStream stream) {
         this.fileId = fileId;
         this.filePath = filePath;
         this.fileTypeId = fileTypeId;
+        this.ownerId = ownerId;
         this.bytes = bytes;
         this.stream = stream;
     }
@@ -51,6 +53,10 @@ public final class FileModel {
 
     public int fileTypeId() {
         return fileTypeId;
+    }
+
+    public int ownerId() {
+        return ownerId;
     }
 
     @Transient

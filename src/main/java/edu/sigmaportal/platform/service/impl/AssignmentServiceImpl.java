@@ -41,8 +41,13 @@ public class AssignmentServiceImpl implements AssignmentService {
         if (!topics.exists(assignment.topicId))
             throw new DependentEntityNotFoundException("Topic does not exist");
 
-        if (!files.allExist(assignment.fileIds))
-            throw new DependentEntityNotFoundException("Some files do not exist");
+        if (assignment.fileIds != null) {
+            if (!files.allExist(assignment.fileIds))
+                throw new DependentEntityNotFoundException("Some files do not exist");
+
+            if (!files.ownsAll(assignerId, assignment.fileIds))
+                throw new BadRequestException("Not a owner of all files");
+        }
 
         int uid = strToUserId(assignerId);
         int tid = strToTopicId(assignment.topicId);
@@ -60,31 +65,36 @@ public class AssignmentServiceImpl implements AssignmentService {
     }
 
     @Override
-    public AssignmentDto update(String assignmentId, AssignmentDto assigment) {
-        if (assigment.fileIds != null && !files.allExist(assigment.fileIds))
-            throw new DependentEntityNotFoundException("Some files do not exist");
-
-        if (assigment.topicId != null && !topics.exists(assigment.topicId))
+    public AssignmentDto update(String assignmentId, AssignmentDto assignment) {
+        if (assignment.topicId != null && !topics.exists(assignment.topicId))
                 throw new DependentEntityNotFoundException("Topic does not exist");
 
         int aid = strToAssignmentId(assignmentId);
         AssignmentModel old = repo.findById(aid).orElseThrow(() -> new EntityNotFoundException("Assignment not found"));
-        if (assigment.topicId != null) {
-            String newTopicCourseId = topics.owningCourseId(assigment.topicId);
+        if (assignment.fileIds != null) {
+            if (!files.allExist(assignment.fileIds))
+                throw new DependentEntityNotFoundException("Some files do not exist");
+
+            int uid = repo.findOwnerIdByAssignmentId(old.assignmentId()).get();
+            if (!files.ownsAll(idToStr(uid), assignment.fileIds))
+                throw new BadRequestException("Not a owner of all files");
+        }
+        if (assignment.topicId != null) {
+            String newTopicCourseId = topics.owningCourseId(assignment.topicId);
             String oldTopicCourseId = topics.owningCourseId(idToStr(old.topicId()));
             if (!newTopicCourseId.equals(oldTopicCourseId))
                 throw new BadRequestException("Cannot move to a topic outside of the current course");
         }
-        String name = Objects.isNull(assigment.name) ? old.name() : assigment.name;
-        String content = Objects.isNull(assigment.content) ? old.content() : assigment.content;
-        OffsetDateTime dueDate = Objects.isNull(assigment.dueDate) ? old.dueDate() : checkDate(assigment.dueDate, "due_date is in the past");
-        OffsetDateTime closeDate = Objects.isNull(assigment.closeDate) ? old.closeDate() : checkDate(assigment.closeDate, "close_date is in the past");
+        String name = Objects.isNull(assignment.name) ? old.name() : assignment.name;
+        String content = Objects.isNull(assignment.content) ? old.content() : assignment.content;
+        OffsetDateTime dueDate = Objects.isNull(assignment.dueDate) ? old.dueDate() : checkDate(assignment.dueDate, "due_date is in the past");
+        OffsetDateTime closeDate = Objects.isNull(assignment.closeDate) ? old.closeDate() : checkDate(assignment.closeDate, "close_date is in the past");
         if (dueDate.isAfter(closeDate)) throw new BadRequestException("due_date is after close_date");
-        int topicId = Objects.isNull(assigment.topicId) ? old.topicId() : strToTopicId(assigment.topicId);
+        int topicId = Objects.isNull(assignment.topicId) ? old.topicId() : strToTopicId(assignment.topicId);
         AssignmentModel merged = new AssignmentModel(old.assignmentId(), name, content, dueDate, closeDate, old.assignedBy(), topicId);
         AssignmentModel saved = repo.save(merged);
-        if (assigment.fileIds != null) {
-            Set<Integer> fileIds = assigment.fileIds.stream().map(this::strToAssignmentId).collect(Collectors.toSet());
+        if (assignment.fileIds != null) {
+            Set<Integer> fileIds = assignment.fileIds.stream().map(this::strToAssignmentId).collect(Collectors.toSet());
             Set<Integer> oldFileIds = assignFileRepo.findAllByAssignmentId(aid).map(AssignmentFileModel::fileId).collect(Collectors.toSet());
             List<AssignmentFileModel> freshFiles = fileIds.stream()
                     .filter(id -> !oldFileIds.contains(id))

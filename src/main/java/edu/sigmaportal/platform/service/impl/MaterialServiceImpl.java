@@ -39,19 +39,29 @@ public class MaterialServiceImpl implements MaterialService {
         if (!topics.exists(material.topicId))
             throw new DependentEntityNotFoundException("Topic does not exist");
 
-        if (!files.allExist(material.fileIds))
-            throw new DependentEntityNotFoundException("Not all files exist");
+        if (material.fileIds != null) {
+            if (!files.allExist(material.fileIds))
+                throw new DependentEntityNotFoundException("Not all files exist");
+
+            if (!files.ownsAll(authorId, material.fileIds))
+                throw new BadRequestException("Not a owner of all files");
+        }
 
         int uid = strToUserId(authorId);
         int tid = strToTopicId(material.topicId);
         MaterialModel model = new MaterialModel(0, material.name, material.content, uid, tid);
         MaterialModel saved = repo.save(model);
-        List<MaterialFileModel> materialFiles = material.fileIds.stream()
-                .mapToInt(this::strToFileId)
-                .mapToObj(fid -> new MaterialFileModel(0, saved.materialId(), fid))
-                .toList();
-        matFileRepo.saveAll(materialFiles);
-        return new MaterialDto(idToStr(saved.materialId()), saved.name(), saved.content(), material.fileIds, idToStr(saved.authorId()), idToStr(saved.topicId()));
+        List<String> savedFileIds;
+        if (material.fileIds != null) {
+            List<MaterialFileModel> materialFiles = material.fileIds.stream()
+                    .mapToInt(this::strToFileId)
+                    .mapToObj(fid -> new MaterialFileModel(0, saved.materialId(), fid))
+                    .toList();
+            savedFileIds = matFileRepo.saveAll(materialFiles).stream().map(m -> idToStr(m.fileId())).toList();
+        } else {
+            savedFileIds = List.of();
+        }
+        return new MaterialDto(idToStr(saved.materialId()), saved.name(), saved.content(), savedFileIds, idToStr(saved.authorId()), idToStr(saved.topicId()));
     }
 
     @Override
@@ -62,11 +72,16 @@ public class MaterialServiceImpl implements MaterialService {
 
     @Override
     public MaterialDto update(String materialId, MaterialDto material) {
-        if (material.fileIds != null && !files.allExist(material.fileIds))
-            throw new DependentEntityNotFoundException("Not all files exist");
-
         int mid = strToMaterialId(materialId);
         MaterialModel old = repo.findById(mid).orElseThrow(() -> new EntityNotFoundException("Material not found"));
+        if (material.fileIds != null) {
+            if (!files.allExist(material.fileIds))
+                throw new DependentEntityNotFoundException("Not all files exist");
+
+            int uid = repo.findOwnerIdByMaterialId(old.materialId()).get();
+            if (!files.ownsAll(idToStr(uid), material.fileIds))
+                throw new BadRequestException("Not a owner of all files");
+        }
         String name = Objects.isNull(material.name) ? old.name() : material.name;
         String content = Objects.isNull(material.content) ? old.content() : material.content;
         int topicId;

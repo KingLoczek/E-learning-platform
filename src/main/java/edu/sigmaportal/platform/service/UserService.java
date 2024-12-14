@@ -10,4 +10,5 @@ public interface UserService {
     void removeUser(String id);
     UserDto fetchUser(String id);
     Collection<UserDto> users();
+    boolean exists(String userId);
 }

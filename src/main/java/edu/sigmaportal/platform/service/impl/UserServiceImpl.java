@@ -94,4 +94,10 @@ public class UserServiceImpl implements UserService {
         }
         return list;
     }
+
+    @Override
+    public boolean exists(String userId) {
+        long uid = strToId(userId);
+        return users.existsById(uid);
+    }
 }

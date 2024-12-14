@@ -13,13 +13,17 @@ public class FileDto {
     @Schema(example = "PDF")
     public String type;
 
+    @Schema(example = "123", accessMode = Schema.AccessMode.READ_ONLY)
+    public String ownerId;
+
     @Schema(example = "aGVsbG8gd29ybGQ=", nullable = true)
     public String content;
 
-    public FileDto(String id, String filename, String type, String content) {
+    public FileDto(String id, String filename, String type, String ownerId, String content) {
         this.id = id;
         this.filename = filename;
         this.type = type;
+        this.ownerId = ownerId;
         this.content = content;
     }
 }
