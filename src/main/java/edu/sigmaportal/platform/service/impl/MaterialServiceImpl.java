@@ -1,6 +1,5 @@
 package edu.sigmaportal.platform.service.impl;
 
-import edu.sigmaportal.platform.dto.FileDto;
 import edu.sigmaportal.platform.dto.MaterialDto;
 import edu.sigmaportal.platform.exception.DependentEntityNotFoundException;
 import edu.sigmaportal.platform.exception.EntityNotFoundException;
@@ -102,6 +101,12 @@ public class MaterialServiceImpl implements MaterialService {
         MaterialModel model = repo.findById(mid).orElseThrow(() -> new EntityNotFoundException("Material not found"));
         List<String> fileIds = matFileRepo.findAllByMaterialId(mid).map(m -> idToStr(m.fileId())).toList();
         return new MaterialDto(idToStr(model.materialId()), model.name(), model.content(), fileIds, idToStr(model.topicId()), idToStr(model.authorId()));
+    }
+
+    @Override
+    public Collection<String> files(String materialId) {
+        int mid = strToMaterialId(materialId);
+        return matFileRepo.findAllByMaterialId(mid).map(m -> idToStr(m.fileId())).toList();
     }
 
     private String idToStr(int id) {

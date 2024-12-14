@@ -1,9 +1,9 @@
 package edu.sigmaportal.platform.controller;
 
-import edu.sigmaportal.platform.dto.FileDto;
 import edu.sigmaportal.platform.dto.MaterialDto;
 
 import edu.sigmaportal.platform.exception.InsufficientPermissionsException;
+import edu.sigmaportal.platform.service.EnrollmentsService;
 import edu.sigmaportal.platform.service.MaterialService;
 import edu.sigmaportal.platform.service.CourseService;
 import edu.sigmaportal.platform.service.TopicService;
@@ -34,11 +34,13 @@ public class MaterialsController {
     private final TopicService topics;
     private final CourseService courses;
     private final MaterialService materials;
+    private final EnrollmentsService enrolls;
 
-    public MaterialsController(TopicService topics, CourseService courses, MaterialService materials) {
+    public MaterialsController(TopicService topics, CourseService courses, MaterialService materials, EnrollmentsService enrolls) {
         this.topics = topics;
         this.courses = courses;
         this.materials = materials;
+        this.enrolls = enrolls;
     }
 
     @GetMapping(value = "/{id}", produces = APPLICATION_JSON_VALUE)
@@ -54,10 +56,16 @@ public class MaterialsController {
     @GetMapping(value = "/{id}/files", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Find files associated with a material")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Files found", content = @Content(array = @ArraySchema(schema = @Schema(implementation = FileDto.class)))),
+            @ApiResponse(responseCode = "200", description = "Files found", content = @Content(array = @ArraySchema(schema = @Schema(type = "string")))),
             @ApiResponse(responseCode = "404", description = "Material not found", content = @Content)
     })
-    public Collection<FileDto> findFiles(@Parameter(description = "ID of the material") @PathVariable String id) {
+    public Collection<String> findFiles(@Parameter(description = "ID of the material") @PathVariable String id, Authentication auth) {
+        String userId = AuthUtils.getUserId(auth);
+        String courseId = materials.owningCourseId(id);
+        if (enrolls.isEnrolled(id, userId) || courses.owns(userId, courseId)) {
+            return materials.files(id);
+        }
+
         return null;
     }
 

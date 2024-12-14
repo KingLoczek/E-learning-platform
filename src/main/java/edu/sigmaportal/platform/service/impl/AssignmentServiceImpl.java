@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -129,8 +130,14 @@ public class AssignmentServiceImpl implements AssignmentService {
     public boolean isClosed(int assignmentId) {
         OffsetDateTime now = OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS);
         OffsetDateTime closeDate = repo.findById(assignmentId)
-                .orElseThrow(() -> new EntityNotFoundException("Assingment not found")).closeDate();
+                .orElseThrow(() -> new EntityNotFoundException("Assignment not found")).closeDate();
         return now.isAfter(closeDate);
+    }
+
+    @Override
+    public Collection<String> files(String id) {
+        int aid = strToAssignmentId(id);
+        return assignFileRepo.findAllByAssignmentId(aid).map(m -> idToStr(m.fileId())).toList();
     }
 
     private OffsetDateTime checkDate(OffsetDateTime dateTime, String error) {

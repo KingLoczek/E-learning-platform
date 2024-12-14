@@ -4,6 +4,7 @@ import edu.sigmaportal.platform.dto.AssignmentDto;
 import edu.sigmaportal.platform.exception.InsufficientPermissionsException;
 import edu.sigmaportal.platform.service.AssignmentService;
 import edu.sigmaportal.platform.service.CourseService;
+import edu.sigmaportal.platform.service.EnrollmentsService;
 import edu.sigmaportal.platform.service.TopicService;
 import edu.sigmaportal.platform.util.AuthUtils;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,11 +33,13 @@ public class AssignmentsController {
     private final AssignmentService assignments;
     private final TopicService topics;
     private final CourseService courses;
+    private final EnrollmentsService enrolls;
 
-    public AssignmentsController(AssignmentService assignments, TopicService topics, CourseService courses) {
+    public AssignmentsController(AssignmentService assignments, TopicService topics, CourseService courses, EnrollmentsService enrolls) {
         this.assignments = assignments;
         this.topics = topics;
         this.courses = courses;
+        this.enrolls = enrolls;
     }
 
     @GetMapping(value = "/{id}", produces = APPLICATION_JSON_VALUE)
@@ -55,7 +58,12 @@ public class AssignmentsController {
             @ApiResponse(responseCode = "200", description = "Files found", content = @Content(array = @ArraySchema(schema = @Schema(type = "string")))),
             @ApiResponse(responseCode = "404", description = "Assignment not found", content = @Content)
     })
-    public Collection<String> findFiles(@Parameter(description = "ID of the assignment") @PathVariable String id) {
+    public Collection<String> findFiles(@Parameter(description = "ID of the assignment") @PathVariable String id, Authentication auth) {
+        String userId = AuthUtils.getUserId(auth);
+        String courseId = assignments.owningCourseId(id);
+        if (enrolls.isEnrolled(courseId, userId) || courses.owns(userId, courseId)) {
+            return assignments.files(id);
+        }
         return null;
     }
 
