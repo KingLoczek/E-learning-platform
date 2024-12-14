@@ -1,9 +1,9 @@
 package edu.sigmaportal.platform.controller;
 
 import edu.sigmaportal.platform.dto.TopicDto;
+import edu.sigmaportal.platform.exception.EntityNotFoundException;
 import edu.sigmaportal.platform.exception.InsufficientPermissionsException;
-import edu.sigmaportal.platform.service.CourseService;
-import edu.sigmaportal.platform.service.TopicService;
+import edu.sigmaportal.platform.service.*;
 import edu.sigmaportal.platform.util.AuthUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,10 +30,16 @@ public class TopicsController {
 
     private final CourseService courses;
     private final TopicService topics;
+    private final EnrollmentsService enrolls;
+    private final AssignmentService assignments;
+    private final MaterialService materials;
 
-    public TopicsController(CourseService courses, TopicService topics) {
+    public TopicsController(CourseService courses, TopicService topics, EnrollmentsService enrolls, AssignmentService assignments, MaterialService materials) {
         this.courses = courses;
         this.topics = topics;
+        this.enrolls = enrolls;
+        this.assignments = assignments;
+        this.materials = materials;
     }
 
     @GetMapping(value = "/{id}", produces = APPLICATION_JSON_VALUE)
@@ -52,8 +58,14 @@ public class TopicsController {
             @ApiResponse(responseCode = "200", description = "Assignments found", content = @Content(array = @ArraySchema(schema = @Schema(type = "string")))),
             @ApiResponse(responseCode = "404", description = "Topic not found", content = @Content)
     })
-    public Collection<String> findAssignments(@Parameter(description = "ID of the associated topic") @PathVariable("id") String id) {
-        return null;
+    public Collection<String> findAssignments(@Parameter(description = "ID of the associated topic") @PathVariable("id") String id, Authentication auth) {
+        String userId = AuthUtils.getUserId(auth);
+        String courseId = topics.owningCourseId(id);
+        if (enrolls.isEnrolled(courseId, userId) || courses.owns(userId, courseId)) {
+            return assignments.findOwnedBy(id);
+        }
+
+        throw new EntityNotFoundException("Assignments not found");
     }
 
     @GetMapping(value = "/{id}/materials", produces = APPLICATION_JSON_VALUE)
@@ -62,8 +74,14 @@ public class TopicsController {
             @ApiResponse(responseCode = "200", description = "Materials found", content = @Content(array = @ArraySchema(schema = @Schema(type = "string")))),
             @ApiResponse(responseCode = "404", description = "Topic not found", content = @Content)
     })
-    public Collection<String> findMaterials(@Parameter(description = "ID of the associated topic") @PathVariable("id") String id) {
-        return null;
+    public Collection<String> findMaterials(@Parameter(description = "ID of the associated topic") @PathVariable("id") String id, Authentication auth) {
+        String userId = AuthUtils.getUserId(auth);
+        String courseId = topics.owningCourseId(id);
+        if (enrolls.isEnrolled(courseId, userId) || courses.owns(userId, courseId)) {
+            return materials.findOwnedBy(id);
+        }
+
+        throw new EntityNotFoundException("Materials not found");
     }
 
     @PostMapping(value = "/", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)

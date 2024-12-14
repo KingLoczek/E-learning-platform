@@ -152,6 +152,12 @@ public class AssignmentServiceImpl implements AssignmentService {
         return assignFileRepo.findAllByAssignmentId(aid).map(m -> idToStr(m.fileId())).toList();
     }
 
+    @Override
+    public Collection<String> findOwnedBy(String id) {
+        int tid = strToTopicId(id);
+        return repo.findByTopicId(tid).map(m -> idToStr(m.assignmentId())).toList();
+    }
+
     private OffsetDateTime checkDate(OffsetDateTime dateTime, String error) {
         OffsetDateTime trunc = dateTime.truncatedTo(ChronoUnit.SECONDS);
         OffsetDateTime now = OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS);

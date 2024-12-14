@@ -13,4 +13,5 @@ public interface AssignmentService {
     boolean exists(String assignmentId);
     boolean isClosed(int assignmentId);
     Collection<String> files(String id);
+    Collection<String> findOwnedBy(String id);
 }

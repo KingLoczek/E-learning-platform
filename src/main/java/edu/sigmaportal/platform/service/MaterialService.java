@@ -11,4 +11,5 @@ public interface MaterialService {
     String owningCourseId(String materialId);
     void delete(String materialId);
     Collection<String> files(String materialId);
+    Collection<String> findOwnedBy(String id);
 }

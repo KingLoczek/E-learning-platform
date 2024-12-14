@@ -136,6 +136,12 @@ public class MaterialServiceImpl implements MaterialService {
         return matFileRepo.findAllByMaterialId(mid).map(m -> idToStr(m.fileId())).toList();
     }
 
+    @Override
+    public Collection<String> findOwnedBy(String id) {
+        int tid = strToTopicId(id);
+        return repo.findByTopicId(tid).map(m -> idToStr(m.materialId())).toList();
+    }
+
     private String idToStr(int id) {
         return Integer.toString(id);
     }
