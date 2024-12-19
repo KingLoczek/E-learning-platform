@@ -7,4 +7,5 @@ VALUES ('Text File', 'text/plain', 'txt'),
        ('C++ Header File', 'text/plain', 'hpp'),
        ('C Source File', 'text/plain', 'c'),
        ('C Header File', 'text/plain', 'h'),
-       ('Portable Document Format', 'application/pdf', 'pdf');
+       ('Portable Document Format', 'application/pdf', 'pdf'),
+       ('Python Source File', 'text/plain', 'py');

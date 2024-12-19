@@ -61,7 +61,7 @@ public class MaterialServiceImpl implements MaterialService {
         } else {
             savedFileIds = List.of();
         }
-        return new MaterialDto(idToStr(saved.materialId()), saved.name(), saved.content(), savedFileIds, idToStr(saved.authorId()), idToStr(saved.topicId()));
+        return new MaterialDto(idToStr(saved.materialId()), saved.name(), saved.content(), savedFileIds, idToStr(saved.topicId()), idToStr(saved.authorId()));
     }
 
     @Override
@@ -111,7 +111,7 @@ public class MaterialServiceImpl implements MaterialService {
                 matFileRepo.deleteStaleFiles(mid, staleFiles);
         }
         List<String> savedFileIds = matFileRepo.findAllByMaterialId(mid).map(m -> idToStr(m.fileId())).toList();
-        return new MaterialDto(idToStr(saved.materialId()), saved.name(), saved.content(), savedFileIds, idToStr(saved.authorId()), idToStr(saved.topicId()));
+        return new MaterialDto(idToStr(saved.materialId()), saved.name(), saved.content(), savedFileIds, idToStr(saved.topicId()), idToStr(saved.authorId()));
     }
 
     @Override

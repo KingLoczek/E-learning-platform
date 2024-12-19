@@ -26,8 +26,8 @@ import java.util.Collection;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
-@RequestMapping("/api/assigment")
-@Tag(name = "assigment", description = "the assigment API")
+@RequestMapping("/api/assignment")
+@Tag(name = "assignment", description = "the assignment API")
 public class AssignmentsController {
 
     private final AssignmentService assignments;

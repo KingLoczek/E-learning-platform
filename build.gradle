@@ -32,6 +32,12 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+javadoc {
+	include 'edu/sigmaportal/platform/service/**'
+	include 'edu/sigmaportal/platform/dto/**'
+	exclude 'edu/sigmaportal/platform/service/impl/**'
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
 }
